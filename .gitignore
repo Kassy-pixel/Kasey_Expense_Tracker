@@ -1,0 +1,19 @@
+
+# Secret configuration
+.env
+
+# Python temporary files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Log files
+*.log
+
+# Local database and personal expense data
+data/*.db
+data/expenses.json
