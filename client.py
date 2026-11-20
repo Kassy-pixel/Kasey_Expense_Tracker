@@ -6,9 +6,8 @@ import requests
 # On Render, use the port assigned to this service. Locally, default to 8000.
 BASE_URL = (
     os.getenv("API_BASE_URL")
-    or f"http://127.0.0.1:{os.getenv('PORT', '8000')}"
+    or "https://kasey-expense-tracker.onrender.com"
 ).rstrip("/")
-
 
 class ExpenseAPIClient:
 
