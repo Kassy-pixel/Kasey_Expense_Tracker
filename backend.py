@@ -1,9 +1,11 @@
 import sqlite3
+from contextlib import asynccontextmanager
+
+import flet.fastapi as flet_fastapi
+from main import main as flet_main
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import FastAPI
-
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -11,11 +13,22 @@ from database import create_tables, get_connection
 from security import hash_password, verify_password
 from auth import create_access_token, verify_access_token
 
+# Start and stop the Flet session manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await flet_fastapi.app_manager.start()
+    try:
+        yield
+    finally:
+        await flet_fastapi.app_manager.shutdown()
+
+
 # Create our FastAPI application
 app = FastAPI(
     title="Kasey Expense Tracker API",
     description="Backend API for managing personal expenses",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Authentication scheme for protected endpoints
@@ -40,23 +53,6 @@ class ExpenseUpdate(BaseModel):
     amount: float = Field(gt=0)
     category: str
     spent_on: str
-
-    @field_validator("category")
-    @classmethod
-    def validate_category(cls, value):
-        allowed_categories = [
-            "Food",
-            "Transport",
-            "Rent",
-            "Entertainment",
-            "Health",
-            "Other"
-        ]
-
-        if value not in allowed_categories:
-            raise ValueError("Invalid expense category.")
-
-        return value
 
     @field_validator("category")
     @classmethod
@@ -122,7 +118,7 @@ def get_current_user(
         connection.close()
 
 
-@app.get("/")
+@app.get("/api")
 def home():
     return {
         "message": "Welcome to Kasey Expense Tracker API!",
@@ -442,3 +438,10 @@ def expense_summary(
 
     finally:
         connection.close()
+
+
+# Create the database tables before the service starts handling requests.
+create_tables()
+
+# Serve the Flet user interface from the root of the same Render service.
+app.mount("/", flet_fastapi.app(session_handler=flet_main))

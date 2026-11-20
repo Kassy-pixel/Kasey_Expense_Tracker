@@ -1,8 +1,13 @@
 """API client for communicating with the Expense Tracker backend."""
 
+import os
 import requests
 
-BASE_URL = "http://127.0.0.1:8000"
+# On Render, use the port assigned to this service. Locally, default to 8000.
+BASE_URL = (
+    os.getenv("API_BASE_URL")
+    or f"http://127.0.0.1:{os.getenv('PORT', '8000')}"
+).rstrip("/")
 
 
 class ExpenseAPIClient:
@@ -13,23 +18,16 @@ class ExpenseAPIClient:
     def get_headers(self):
         """Return authentication headers when logged in."""
         if self.token:
-            return {
-                "Authorization": f"Bearer {self.token}"
-            }
-
+            return {"Authorization": f"Bearer {self.token}"}
         return {}
 
     def register(self, email, password):
         """Register a new user."""
         response = requests.post(
             f"{BASE_URL}/register",
-            json={
-                "email": email,
-                "password": password
-            },
+            json={"email": email, "password": password},
             timeout=10
         )
-
         response.raise_for_status()
         return response.json()
 
@@ -37,18 +35,12 @@ class ExpenseAPIClient:
         """Log in and save the access token."""
         response = requests.post(
             f"{BASE_URL}/login",
-            json={
-                "email": email,
-                "password": password
-            },
+            json={"email": email, "password": password},
             timeout=10
         )
-
         response.raise_for_status()
-
         data = response.json()
         self.token = data["access_token"]
-
         return data
 
     def add_expense(self, title, amount, category, spent_on):
@@ -64,16 +56,16 @@ class ExpenseAPIClient:
             headers=self.get_headers(),
             timeout=10
         )
-
         response.raise_for_status()
         return response.json()
 
     def get_expenses(self):
+        """Retrieve expenses belonging to the logged-in user."""
         response = requests.get(
-        f"{BASE_URL}/expenses",
-        headers=self.get_headers(),
-        timeout=10
-    )
+            f"{BASE_URL}/expenses",
+            headers=self.get_headers(),
+            timeout=10
+        )
         response.raise_for_status()
         return response.json()["expenses"]
 
@@ -84,7 +76,6 @@ class ExpenseAPIClient:
             headers=self.get_headers(),
             timeout=10
         )
-
         response.raise_for_status()
         return response.json()
 
@@ -101,7 +92,6 @@ class ExpenseAPIClient:
             headers=self.get_headers(),
             timeout=10
         )
-
         response.raise_for_status()
         return response.json()
 
@@ -112,6 +102,5 @@ class ExpenseAPIClient:
             headers=self.get_headers(),
             timeout=10
         )
-
         response.raise_for_status()
         return response.json()
